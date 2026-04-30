@@ -1,0 +1,94 @@
+// Representa una plataforma del juego sobre la que el jugador puede pararse.
+// Tiene un temporizador: al ser pisada empieza a contar y eventualmente desaparece.
+class Platform {
+    field int x, y;          // Posicion de la esquina superior izquierda
+    field int width, height; // Dimensiones de la plataforma
+    field int timer;         // Contador regresivo antes de desactivarse
+    field boolean active;    // Indica si la plataforma esta visible y activa
+    field boolean steppedOn; // Indica si el jugador ya la piso
+
+    // Constructor: crea una plataforma en la posicion y tamano indicados.
+    constructor Platform new(int ax, int ay, int aw, int ah) {
+        let x = ax;
+        let y = ay;
+        let width = aw;
+        let height = ah;
+        let timer = 0;
+        let active = true;
+        let steppedOn = false;
+        return this;
+    }
+
+    // Actualiza el estado de la plataforma cada frame.
+    // Si fue pisada, reduce el temporizador; cuando llega a 0 se desactiva.
+    method void update() {
+        if (steppedOn) {
+            let timer = timer - 1;
+            if (timer < 1) {
+                let active = false; // La plataforma desaparece
+            }
+        }
+        return;
+    }
+
+    // Activa el temporizador de la plataforma la primera vez que el jugador la pisa.
+    method void stepOn() {
+        if (~steppedOn) {
+            let steppedOn = true;
+            let timer = 90;  // La plataforma dura 90 frames antes de desaparecer
+        }
+        return;
+    }
+
+    // Reinicia la plataforma en una nueva posicion para reutilizarla.
+    method void reset(int nx, int ny) {
+        let x = nx;
+        let y = ny;
+        let timer = 0;
+        let active = true;
+        let steppedOn = false;
+        return;
+    }
+
+    // Dibuja la plataforma en pantalla.
+    // Si fue pisada y le quedan menos de 30 frames, parpadea alternando negro/blanco.
+    method void draw() {
+        if (steppedOn & (timer < 30)) {
+            if ((timer & 1) = 0) {
+                // Frame par: dibuja en negro (visible)
+                do Screen.setColor(true);
+                do Screen.drawRectangle(x, y, x + width, y + height);
+            } else {
+                // MODIFICADO: Pinta de blanco (false) para crear el parpadeo real
+                do Screen.setColor(false);
+                do Screen.drawRectangle(x, y, x + width, y + height);
+            }
+        } else {
+            // Plataforma normal: siempre visible en negro
+            do Screen.setColor(true);
+            do Screen.drawRectangle(x, y, x + width, y + height);
+        }
+        return;
+    }
+
+    // NUEVO: Método para borrar la plataforma de la pantalla
+    // Pinta sobre ella en blanco para eliminarla visualmente antes de reubicarla.
+    method void erase() {
+        do Screen.setColor(false);
+        do Screen.drawRectangle(x, y, x + width, y + height);
+        return;
+    }
+
+    // Metodos getter para acceder al estado de la plataforma desde otras clases.
+    method boolean isActive()  { return active; }
+    method int getX()          { return x; }
+    method int getY()          { return y; }
+    method int getWidth()      { return width; }
+    method int getHeight()     { return height; }
+
+    // Libera la memoria de esta plataforma.
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+}

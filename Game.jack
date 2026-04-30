@@ -1,0 +1,270 @@
+// Clase principal del juego Tide Escape.
+// Maneja el estado global: jugador, plataformas, agua, puntaje y logica de actualizacion.
+class Game {
+    field Player player;       // El personaje controlado por el usuario
+    field Array platforms;     // Arreglo de plataformas del escenario
+    field int numPlatforms;    // Cantidad total de plataformas
+    field int waterLevel;      // Posicion Y del nivel del agua (sube con el tiempo)
+    field int waterSpeed;      // Cuantos pixeles sube el agua por tick
+    field int score;           // Puntaje actual
+    field int lastScore;       // Ultimo puntaje dibujado (para evitar redibujos innecesarios)
+    field boolean gameOver;    // Indica si el juego termino
+    field int tickCount;       // Contador de frames para controlar el tiempo
+    field int lastKey;         // Ultima tecla presionada
+
+    // Constructor: inicializa todas las plataformas, el jugador y los valores del juego.
+    constructor Game new() {
+        let numPlatforms = 7;
+        let platforms = Array.new(numPlatforms);
+
+        // Crea las plataformas con posicion (x, y), ancho y alto
+        let platforms[0] = Platform.new(10,  200, 55, 6);
+        let platforms[1] = Platform.new(100, 175, 55, 6);
+        let platforms[2] = Platform.new(210, 150, 55, 6);
+        let platforms[3] = Platform.new(350, 170, 55, 6);
+        let platforms[4] = Platform.new(60,  120, 55, 6);
+        let platforms[5] = Platform.new(270, 95,  55, 6);
+        let platforms[6] = Platform.new(410, 65,  55, 6);
+
+        // Crea el jugador en la posicion inicial
+        let player = Player.new(60, 180);
+
+        let waterLevel = 240;   // El agua empieza cerca del fondo
+        let waterSpeed = 1;     // Sube 1 pixel cada tick
+        let score = 0;
+        let lastScore = -1;     // Fuerza el primer dibujado del puntaje
+        let gameOver = false;
+        let tickCount = 0;
+        let lastKey = 0;
+
+        return this;
+    }
+
+    // Muestra la pantalla de inicio con instrucciones y espera a que el usuario presione una tecla.
+    method void showStartScreen() {
+        do Screen.clearScreen();
+        do Output.moveCursor(2,  18); do Output.printString("TIDE ESCAPE");
+        do Output.moveCursor(4,  14); do Output.printString("Universidad EAFIT");
+        do Output.moveCursor(7,  12); do Output.printString("--- Instrucciones ---");
+        do Output.moveCursor(9,  10); do Output.printString("Flecha IZQ/DER : moverse");
+        do Output.moveCursor(11, 10); do Output.printString("Flecha ARRIBA  : saltar");
+        do Output.moveCursor(14, 10); do Output.printString("Evita que el agua");
+        do Output.moveCursor(15, 10); do Output.printString("te alcance");
+        do Output.moveCursor(18, 10); do Output.printString("Presiona cualquier");
+        do Output.moveCursor(19, 10); do Output.printString("tecla para comenzar");
+        
+        // Espera a que el usuario presione una tecla y luego la suelte
+        while (Keyboard.keyPressed() = 0) { do Sys.wait(20); }
+        while (~(Keyboard.keyPressed() = 0)) { do Sys.wait(20); }
+        return;
+    }
+
+    // Bucle principal del juego: muestra inicio, luego actualiza y dibuja cada frame.
+    method void run() {
+        do showStartScreen();
+        do Screen.clearScreen();
+        
+        // Imprimir etiqueta de puntos estática una sola vez
+        do Output.moveCursor(0, 0);
+        do Output.printString("Pts:");
+
+        // Bucle principal: se repite hasta que el juego termine
+        while (~gameOver) {
+            do update();    // Actualiza logica
+            do draw();      // Dibuja el frame
+            do Sys.wait(20); // Pausa de ~20ms para controlar la velocidad
+        }
+        
+        do showGameOver();
+        return;
+    }
+
+    // Actualiza toda la logica del juego en cada frame:
+    // entrada del usuario, fisica del jugador, colisiones, agua y puntaje.
+    method void update() {
+        var int i;
+        var Platform p;
+        var int key;
+        var int ny;
+
+        let key = Keyboard.keyPressed();
+
+        // Guarda la ultima tecla presionada (0 = ninguna)
+        if (key = 0) {
+            let lastKey = 0;
+        } else {
+            let lastKey = key;
+        }
+
+        // Borrar frame anterior del jugador
+        do player.erase();
+
+        // Aplica movimiento segun la tecla presionada
+        // 130 = flecha izquierda, 132 = flecha derecha, 131 = flecha arriba
+        if (lastKey = 130) { do player.moveLeft();  }
+        if (lastKey = 132) { do player.moveRight(); }
+        if (lastKey = 131) { do player.jump();      }
+
+        do player.applyGravity(); // Aplica gravedad (incrementa velY)
+        do player.move();         // Mueve al jugador segun su velocidad
+
+        // Detecta colisiones del jugador con cada plataforma activa
+        let i = 0;
+        while (i < numPlatforms) {
+            let p = platforms[i];
+            if (p.isActive()) {
+                if (player.isLandingOn(p)) {
+                    do player.landOn(p);  // Coloca al jugador encima de la plataforma
+                    do p.stepOn();        // Activa el temporizador de la plataforma
+                }
+            }
+            let i = i + 1;
+        }
+
+        // Actualiza el estado de cada plataforma y la reubica si quedo inactiva
+        let i = 0;
+        while (i < numPlatforms) {
+            let p = platforms[i];
+            do p.update();
+            if (~p.isActive()) {
+                // Borrar plataforma inactiva antes de reubicarla
+                do p.erase();
+                
+                // Calcula nueva posicion Y por encima del agua
+                let ny = waterLevel - (28 * (i + 1)) - 10;
+                if (ny < 5) { let ny = 5; }
+                do p.reset(getNewX(i), ny);
+            }
+            let i = i + 1;
+        }
+
+        // Cada 60 frames: sube el agua y aumenta el puntaje
+        let tickCount = tickCount + 1;
+        if (tickCount > 60) {
+            let tickCount = 0;
+            if (waterLevel > 15) {
+                let waterLevel = waterLevel - waterSpeed; // Sube el agua
+            }
+            let score = score + 1;
+        }
+
+        // Verifica si el jugador toco el agua (game over)
+        if (player.getY() > (waterLevel - 8)) {
+            let gameOver = true;
+        }
+
+        // Limita al jugador dentro de los bordes de la pantalla
+        if (player.getX() < 0)   { do player.setX(0);   }
+        if (player.getX() > 490) { do player.setX(490); }
+        if (player.getY() < 0)   { do player.setY(0);   }
+
+        return;
+    }
+
+    // Retorna la posicion X de reubicacion para cada plataforma segun su indice.
+    method int getNewX(int i) {
+        if (i = 0) { return 10;  }
+        if (i = 1) { return 110; }
+        if (i = 2) { return 220; }
+        if (i = 3) { return 360; }
+        if (i = 4) { return 60;  }
+        if (i = 5) { return 290; }
+        return 430;
+    }
+
+    // Dibuja todos los elementos visuales del juego en pantalla.
+    method void draw() {
+        var int i;
+        var Platform p;
+
+        // Dibuja nivel de agua
+        do Screen.setColor(true);
+        do Screen.drawRectangle(0, waterLevel, 511, 255);
+
+        // Dibuja plataformas
+        let i = 0;
+        while (i < numPlatforms) {
+            let p = platforms[i];
+            if (p.isActive()) { do p.draw(); }
+            let i = i + 1;
+        }
+
+        // Dibuja jugador
+        do player.draw();
+
+        // Actualiza puntaje en memoria solo cuando cambia
+        if (~(score = lastScore)) {
+            do Output.moveCursor(0, 4); 
+            do Output.printInt(score);
+            let lastScore = score;
+        }
+
+        return;
+    }
+
+    // Muestra la pantalla de fin de juego con puntaje y rango del jugador.
+    method void showGameOver() {
+        var String rank;
+
+        // Calcula el rango segun el puntaje obtenido
+        if (score < 10) {
+            let rank = "Novato";
+        } else {
+            if (score < 30) {
+                let rank = "Buen Salto";
+            } else {
+                if (score < 50) {
+                    let rank = "Superviviente";
+                } else {
+                    let rank = "Maestro del Escape";
+                }
+            }
+        }
+
+        // Dibuja el marco Pop-up
+        do Screen.setColor(true);
+        do Screen.drawRectangle(128, 68, 400, 208); // Sombra
+        
+        do Screen.setColor(false);
+        do Screen.drawRectangle(120, 60, 392, 200); // Borde grueso blanco
+
+        do Screen.setColor(true);
+        do Screen.drawRectangle(122, 62, 390, 198); // Borde delgado negro
+
+        do Screen.setColor(false);
+        do Screen.drawRectangle(124, 64, 388, 196); // Fondo blanco interior
+
+        // Textos del Pop-up
+        do Output.moveCursor(7, 21); 
+        do Output.printString("TE ALCANZO LA MAREA");
+        
+        do Output.moveCursor(10, 18);
+        do Output.printString("Puntos totales: ");
+        do Output.printInt(score);
+        
+        do Output.moveCursor(12, 18);
+        do Output.printString("Rango: ");
+        do Output.printString(rank);
+        
+        do Output.moveCursor(16, 22);
+        do Output.printString("Excelente intento");
+
+        return;
+    }
+
+    // Libera la memoria de todas las plataformas, el jugador y el objeto Game.
+    method void dispose() {
+        var int i;
+        var Platform p;
+        let i = 0;
+        while (i < numPlatforms) {
+            let p = platforms[i];
+            do p.dispose();
+            let i = i + 1;
+        }
+        do platforms.dispose();
+        do player.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+}

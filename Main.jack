@@ -1,0 +1,15 @@
+// Clase principal del programa.
+// Es el punto de entrada del juego Tide Escape.
+class Main {
+    // Funcion principal que se ejecuta al iniciar el programa.
+    function void main() {
+        var Game game;
+        // Crea una nueva instancia del juego
+        let game = Game.new();
+        // Ejecuta el bucle principal del juego
+        do game.run();
+        // Libera la memoria al terminar
+        do game.dispose();
+        return;
+    }
+}

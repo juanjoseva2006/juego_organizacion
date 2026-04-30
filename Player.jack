@@ -1,0 +1,117 @@
+// Representa al jugador controlado por el usuario.
+// Maneja su posicion, velocidad vertical, salto, gravedad y colision con plataformas.
+class Player {
+    field int x, y;          // Posicion actual del jugador (esquina superior izquierda)
+    field int width, height; // Dimensiones del sprite del jugador
+    field int velY;          // Velocidad vertical (positivo = cae, negativo = sube)
+    field boolean onGround;  // Indica si el jugador esta parado sobre una superficie
+
+    // Constructor: inicializa al jugador en la posicion de inicio.
+    constructor Player new(int startX, int startY) {
+        let x = startX;
+        let y = startY;
+        let width  = 10;
+        let height = 14;
+        let velY   = 0;
+        let onGround = false;
+        return this;
+    }
+
+    // Mueve al jugador 8 pixeles hacia la izquierda.
+    method void moveLeft()  { let x = x - 8; return; }
+
+    // Mueve al jugador 8 pixeles hacia la derecha.
+    method void moveRight() { let x = x + 8; return; }
+
+    // Hace saltar al jugador si esta en el suelo.
+    // Asigna velocidad vertical negativa para que suba.
+    method void jump() {
+        if (onGround) {
+            let velY = -12;      // Impulso hacia arriba
+            let onGround = false;
+        }
+        return;
+    }
+
+    // Incrementa la velocidad vertical simulando la gravedad.
+    // Limita la caida a un maximo de 6 para evitar caidas muy rapidas.
+    method void applyGravity() {
+        if (velY < 6) {
+            let velY = velY + 1;
+        }
+        return;
+    }
+
+    // Aplica la velocidad vertical a la posicion Y del jugador.
+    // Si esta cayendo, desactiva el flag de suelo.
+    method void move() {
+        let y = y + velY;
+        if (velY > 0) {
+            let onGround = false; // Esta en el aire (cayendo)
+        }
+        return;
+    }
+
+    // Devuelve true si el jugador esta aterrizando sobre la plataforma dada.
+    // Verifica que la parte inferior del jugador este dentro del rango vertical
+    // de la plataforma y que haya superposicion horizontal.
+    method boolean isLandingOn(Platform p) {
+        var int px, py, pw, ph;
+        var int playerBottom, playerLeft, playerRight;
+
+        let px = p.getX();
+        let py = p.getY();
+        let pw = p.getWidth();
+        let ph = p.getHeight();
+
+        let playerBottom = y + height;  // Borde inferior del jugador
+        let playerLeft   = x;
+        let playerRight  = x + width;
+
+        // No puede aterrizar si esta subiendo
+        if (velY < 0)                     { return false; }
+        // El jugador esta por encima de la plataforma
+        if (playerBottom < py)            { return false; }
+        // El jugador ya paso por debajo de la plataforma (margen de 6px)
+        if (playerBottom > (py + ph + 6)) { return false; }
+        // No hay superposicion horizontal
+        if (playerRight  < px)            { return false; }
+        if (playerLeft   > (px + pw))     { return false; }
+        return true;
+    }
+
+    // Coloca al jugador exactamente encima de la plataforma y detiene la caida.
+    method void landOn(Platform p) {
+        let y = p.getY() - height; // Ajusta Y para quedar sobre la superficie
+        let velY = 0;
+        let onGround = true;
+        return;
+    }
+
+    // Dibuja al jugador como un rectangulo negro en su posicion actual.
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawRectangle(x, y, x + width, y + height);
+        return;
+    }
+
+    // NUEVO: Método para borrar al jugador antes de moverse
+    // Pinta sobre el en blanco para eliminarlo visualmente antes de redibujar.
+    method void erase() {
+        do Screen.setColor(false);
+        do Screen.drawRectangle(x, y, x + width, y + height);
+        return;
+    }
+
+    // Metodos getter y setter de posicion.
+    method int getX() { return x; }
+    method int getY() { return y; }
+    method void setX(int nx) { let x = nx; return; }
+    method void setY(int ny) { let y = ny; return; }
+
+    // Libera la memoria del jugador.
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+}
