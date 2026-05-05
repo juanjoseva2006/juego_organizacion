@@ -37,3 +37,9 @@ Al inicio tuvimos un desbordamiento de memoria. En la primera versión, cada vez
 Otro fue la velocidad del jugador. Habíamos puesto un movimiento de 2 píxeles por pulsación y un salto suave, y al probarlo no alcanzabas a llegar de una plataforma a la siguiente antes de que el agua subiera. Subimos el desplazamiento a 8 píxeles y el impulso del salto a `velY = -12`, y ahí sí se puede planear la ruta.
 
 El tercero fue parpadeo. Como redibujábamos en cada frame había flicker en el jugador y en las plataformas. Agregamos un método `erase` en las dos clases que pinta el rectángulo en blanco antes de moverlo, y solo redibujamos lo que cambia.
+
+## Requisitos
+Nand2Tetris Software Suite (versión 2.6 o superior). Se descarga de nand2tetris.org/software.
+Java Runtime Environment (JRE) 8 o superior, porque las herramientas del suite (JackCompiler, VMEmulator) corren sobre Java.
+Sistema operativo: Windows, macOS o Linux
+No se necesitan librerías ni dependencias externas, solo el Jack OS estándar que viene con el suite.
