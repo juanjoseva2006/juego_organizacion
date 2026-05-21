@@ -5,12 +5,14 @@ Tide Escape es un plataformero vertical en Jack. El personaje está sobre unas p
 ## Integrantes
 
 Sebastian Acosta Molina
-Juan Jose 
+</br>
+Juan Jose Vanegas
+</br>
 Yan Frank Rios Lopez 
 
 
 
-Video de YouTube: 
+Video de YouTube: https://youtu.be/NW_lR9id2bg
 
 ## El juego
 
