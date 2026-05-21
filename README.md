@@ -43,3 +43,16 @@ Nand2Tetris Software Suite (versión 2.6 o superior). Se descarga de nand2tetris
 Java Runtime Environment (JRE) 8 o superior, porque las herramientas del suite (JackCompiler, VMEmulator) corren sobre Java.
 Sistema operativo: Windows, macOS o Linux
 No se necesitan librerías ni dependencias externas, solo el Jack OS estándar que viene con el suite.
+
+
+## Evidencias 
+
+<img width="538" height="300" alt="Screenshot 2026-05-20 at 7 40 24 PM" src="https://github.com/user-attachments/assets/73681a59-ab10-4e75-a2c7-3f10e84c7def" />
+
+<img width="538" height="300" alt="Screenshot 2026-05-20 at 7 40 36 PM" src="https://github.com/user-attachments/assets/3e562eae-7386-46f1-96f7-52061ecfbb6c" />
+
+<img width="538" height="300" alt="Screenshot 2026-05-20 at 7 40 43 PM" src="https://github.com/user-attachments/assets/29653163-7d45-4092-9faa-875b1d03a5c7" />
+
+
+
+
